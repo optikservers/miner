@@ -1,0 +1,42 @@
+{
+  "name": "optikservers",
+  "version": "1.0.0",
+  "description": "An XMRIG miner for optikservers",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "repository": "https://github.com/optikservers/miner",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "OptikServers",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^13.1.7",
+    "electron-builder": "~22.10.5"
+  },
+  "dependencies": {
+    "axios": "^0.21.4",
+    "child_process": "^1.0.2",
+    "custom-electron-titlebar": "^3.2.7",
+    "express": "^4.17.1",
+    "node-downloader-helper": "^1.0.19",
+    "unzipper": "^0.10.11"
+  },
+  "build": {
+    "appId": "com.optikservers.app",
+    "productName": "OptikServers",
+    "copyright": "Copyright © 2021 ${author}",
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "createDesktopShortcut": true
+    }
+  }
+}
