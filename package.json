@@ -24,7 +24,7 @@
   "dependencies": {
     "axios": "^0.21.4",
     "child_process": "^1.0.2",
-    "custom-electron-titlebar": "^3.2.7",
+    "custom-electron-titlebar": "^3.2.9",
     "express": "^4.17.1",
     "node-downloader-helper": "^1.0.19",
     "unzipper": "^0.10.11"
