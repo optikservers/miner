@@ -31,10 +31,12 @@ menu.append(new MenuItem({
 
 titlebar.updateMenu(menu);
 titlebar.updateBackground("#181C27");
-titlebar.updateIcon("icon.png");
 });
 
 
 function logout() {
 	ipcRenderer.invoke('logout');
+}
+function login(uid) {
+	ipcRenderer.invoke("login", uid);
 }
