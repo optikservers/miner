@@ -22,7 +22,7 @@
     "electron-debug": "^3.2.0",
     "electron-remote": "^1.3.0",
     "electron-webpack": "^2.8.2",
-    "express": "^4.17.1",
+    "express": "^4.17.2",
     "node-downloader-helper": "^1.0.19",
     "unzipper": "^0.10.11"
   },
