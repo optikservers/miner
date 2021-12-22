@@ -1,7 +1,7 @@
 {
   "name": "optikservers",
-  "version": "1.0.0",
-  "description": "An XMRIG miner for optikservers",
+  "version": "0.1.1",
+  "description": "OptikServers ",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -34,6 +34,10 @@
       "oneClick": false,
       "allowElevation": true,
       "createDesktopShortcut": true
+    },
+    "win": {
+      "requestedExecutionLevel": "requireAdministrator",
+      "target": "nsis"
     },
     "directories": {
       "buildResources": "dist"

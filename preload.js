@@ -5,29 +5,27 @@ let titlebar;
 window.addEventListener('DOMContentLoaded', () => {
   titlebar = new customTitlebar.Titlebar(); 
   const menu = new Menu();
-menu.append(new MenuItem({
-	label: 'Item 2',
-	submenu: [
-		{
-			label: 'Subitem 1',
-			click: () => console.log('Click on subitem 1')
-		},
-		{
-			type: 'separator'
-		}
-	]
-}));
 
 menu.append(new MenuItem({
 	label: 'Account',
-	submenu: [
+    submenu: [
 		{
-      label: 'Logout',
-      type: "normal",
-      click: () => logout()
+		  label: 'Settings',
+		  click: async () => {
+			  settings();
+		  }
+		},
+		{
+		  label: 'Logout',
+		  click: async () => {
+			  logout();
+		  }
 		}
-	]
+		  
+		
+	  ]
 }));
+
 
 titlebar.updateMenu(menu);
 titlebar.updateBackground("#181C27");
@@ -36,6 +34,9 @@ titlebar.updateBackground("#181C27");
 
 function logout() {
 	ipcRenderer.invoke('logout');
+}
+function settings(){
+	ipcRenderer.invoke("settings");
 }
 function login(uid) {
 	ipcRenderer.invoke("login", uid);

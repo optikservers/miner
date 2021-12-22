@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>OptikServers</title>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+		<link rel="shortcut icon" href="https://cdn.discordapp.com/attachments/732699649143472161/870765448424222730/icons8-group-of-fruits-96.png">
+		<link rel="icon" href="https://cdn.discordapp.com/attachments/732699649143472161/870765448424222730/icons8-group-of-fruits-96.png">
+		<link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="style.css">
+		
+		<style>
+			body {
+				background-color: #181C27;
+
+			}
+		</style>
+	</head>
+	<body>
+		<section class="ftco-section">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-6 text-center mb-5">
+                        <h2 style="color:white;" class="heading-section">Settings</h2>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-5">
+                        <div class="login-wrap p-4 p-md-5">
+                            <center><h4 id="saved" style="color:green;"></h4></center>
+                            <div class="form-group">
+                                <label>CPU Limit:</label>
+                                <input type="text" id="input" class="form-control rounded-left" value="" required>
+                                <br><br>
+                                <button type="button" id="save" style="width:100%;" class="btn btn-success rounded px-3">SAVE</button>
+                                
+                                <button type="button" id="back" style="width:100%; margin-top:5px;" class="btn btn-primary rounded px-3">BACK TO MINER</button>
+                            </div>
+					</div>
+					
+                </div>
+            </div>
+        </div>
+    </section>
+	</body>
+	<script src="renderer.js"></script>
+	<script>
+		const { ipcRenderer } = require("electron");
+            ipcRenderer.invoke("settings:fetch");
+            ipcRenderer.on("settings:fetch_reply", function (evt, cpuLimit) {
+                document.getElementById("input").value = cpuLimit;
+            })
+            document.getElementById("save").onclick = function () {
+                var cpuLimit = document.getElementById("input").value;
+                ipcRenderer.invoke("settings:save", cpuLimit);
+                document.getElementById("saved").innerHTML = "Saved!";
+            }
+            document.getElementById("back").onclick = function () {
+                ipcRenderer.invoke("settings:back");
+            }
+            
+	</script>
+</html>

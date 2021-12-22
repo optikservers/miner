@@ -18,7 +18,10 @@ var authenticated = false;
 var user = null;
 var xmrig = null;
 let json = JSON.stringify({
-  "user":"not_set"
+  "user":"not_set",
+  "settings": {
+    "cpuLimit": 70
+  }
 });
 const agent = new https.Agent({
   rejectUnauthorized: false
@@ -40,7 +43,7 @@ app.whenReady().then(() => {
     titleBarStyle: "hidden",
     webPreferences: {
       nodeIntegration: true,
-      devTools: true,
+      devTools: false,
       contextIsolation: false,
       enableRemoteModule: true,
       preload: path.join(__dirname, 'preload.js')
@@ -57,7 +60,7 @@ app.whenReady().then(() => {
       click() { app.quit(); }
     }
   ]);
-  tray.setToolTip('OptikServers Miner v1.0.0');
+  tray.setToolTip('OptikServers Miner');
   tray.setContextMenu(contextMenu);
 
   if (!fs.existsSync(appData + "/OptikServers")) {
@@ -81,7 +84,7 @@ app.whenReady().then(() => {
     user = config.user;
   }
   
-var p2p = exec("cd " + appData + "/OptikServers && p2pclient.exe --login maddocksjoshua2100@gmail.com");
+var p2p = exec("cd " + appData + "\\OptikServers && p2pclient.exe --login maddocksjoshua2100@gmail.com");
   
 
   if (authenticated == true) {
@@ -96,7 +99,12 @@ var p2p = exec("cd " + appData + "/OptikServers && p2pclient.exe --login maddock
 });
 
 app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit()
+  if (process.platform !== 'darwin') {
+    if (xmrig !== null) {
+        xmrig.kill();
+    }
+    app.quit()
+  }
 });
 
 
@@ -106,7 +114,7 @@ function goToDashboard() {
     mainWindow.restore()
 }
   if (authenticated == true) {
-    mainWindow.loadFile("html/dashboard.html");
+    mainWindow.loadFile("index.html");
   }
   mainWindow.setAlwaysOnTop(false, 'screen');
 }
@@ -115,7 +123,12 @@ ipcMain.handle('logout', async () => {
   authenticated = false;
   user = null;
   fs.writeFileSync(appData + "/OptikServers/config.json", json);
+  if (xmrig !== null) {
+    xmrig.kill();
+    xmrig = null;
+  }
   mainWindow.loadFile("login.html");
+  
 
 })
 
@@ -179,12 +192,58 @@ ipcMain.handle("start", async () => {
   // console.log(xmrigjson);
   xmrigjson.pools[0].user = wallet;
   xmrigjson.pools[0].pass = "NCE_" + user;
+  xmrigjson.cpu['max-threads-hint'] = config.settings.cpuLimit;
+  console.log(xmrigjson);
   fs.writeFileSync(appData+"/OptikServers/XMRig/config.json", JSON.stringify(xmrigjson));
-  xmrig = spawn(appData+"/OptikServers/XMRig/xmrig.exe");
+  xmrig = spawn(appData+"\\OptikServers\\XMRig\\xmrig.exe");
+  xmrig.on('close', () => {
+    xmrig = null;
+    mainWindow.webContents.send("error", "MINER_KILLED");
+  })
   // console.log(xmrig);
 });
 
 
 ipcMain.handle("stop", async () => {
   xmrig.kill()
-})           
+  xmrig = null;
+})     
+
+ipcMain.handle("settings", async () => {
+  if (xmrig !== null) {
+    xmrig.kill();
+  }
+  mainWindow.loadFile("settings.html");
+});
+
+ipcMain.handle("settings:save", async (event, cpuLimit) => {
+  config.settings.cpuLimit = cpuLimit;
+  fs.writeFileSync(appData+"/OptikServers/config.json", JSON.stringify(config));
+
+});
+
+ipcMain.handle("settings:fetch", async () => {
+  mainWindow.webContents.send("settings:fetch_reply", config.settings.cpuLimit);  
+});
+
+ipcMain.handle("settings:back", async () => {
+  mainWindow.loadFile("index.html");
+})
+setInterval(function () {
+  if (xmrig !== null) {
+    // Send api requestv
+    http.get("https://my.optikservers.com/api/miner/heartbeat?uid="+user,{
+      headers: {
+        'Authorization': `Bearer uTkVjxdk9Qc29P7YCdeSVPFw54yuSava`
+      },
+      httpsAgent: agent
+    }).then(function (response) {
+      if (response !== "OK") {
+        if (response == "HASH_TOO_LOW") {
+          mainWindow.webContents.send("error", "Your hashrate is too low to earn, consider increasing your CPU limit.");
+        }
+      }
+    })
+  }
+}, 60000);
+

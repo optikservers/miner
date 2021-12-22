@@ -49,23 +49,41 @@
             document.getElementById("username").innerHTML = message;
 			document.getElementById("coins").innerHTML = coins + " Coins";
         });
+		ipcRenderer.on('error', function (evt, error) {
+			if (error == "MINER_KILLED") {
+				if (mining == true) {
+				mining = false;
+				document.getElementById("button").className = "btn btn-success rounded px-3";
+				document.getElementById("button").innerHTML = "START MINING";
+				alert("The miner has been killed.");
+				}
+			}
+			else {
+				alert(error);
+			}
+		})
+		
 		setInterval(function () {
 			if (mining == true) {
 				ipcRenderer.invoke("userinfo");
 			}
-		}, 5000);
+		}, 30000);
 		document.getElementById("button").onclick = function () {
 		if (mining == false) {
 			ipcRenderer.invoke("start");
+			
 			document.getElementById("button").className = "btn btn-danger rounded px-3";
 			document.getElementById("button").innerHTML = "STOP MINING";
 			mining = true;
+			alert("Heads up! It may take up to 10 minutes for the miner to start working properly as it is searching for the best algorithm.");
 		}
 		else {
+			
 			ipcRenderer.invoke("stop");
 			document.getElementById("button").className = "btn btn-success rounded px-3";
 			document.getElementById("button").innerHTML = "START MINING";
 			mining = false;
+			
 		}
 		}
 	</script>
