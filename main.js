@@ -136,12 +136,10 @@ ipcMain.handle('logout', async () => {
 
 ipcMain.handle('login', async (event, id) => {
   if (authenticated !== true) {
-    console.log("message received");
     // Check if user discord id exists
     http.get('https://my.optikservers.com/api/miner/checkid?uid=' + id, { httpsAgent: agent })
     .then(function (response) {
       // handle success
-      console.log(response.data);
       if (response.data == 1) {
         authenticated = true;
         user = id;
@@ -160,7 +158,6 @@ ipcMain.handle('login', async (event, id) => {
 ipcMain.handle("userinfo", async () => {
   http.get("https://my.optikservers.com/api/miner/getuserinfo?userid=" + user, { httpsAgent: agent})
   .then(function (response) {
-    console.log(response.data.username);
     mainWindow.webContents.send("user", response.data.username, response.data.coins);
   }); 
 })
@@ -182,25 +179,15 @@ ipcMain.handle("start", async () => {
   }
     fs.copyFileSync(path.join(__dirname, "xmrig.config.json"), appData+"/OptikServers/XMRig/config.json");
     var xmrigjson = require(appData+"/OptikServers/XMRig/config.json");
-    // xmrigjson.pools[0].user = wallet;
-    // xmrigjson.pools[0].pass = "NCE_" + user;
-  //   var xmrigjson = null;
-  //   fs.readFileSync(appData+"/OptikServers/XMRig/config.json", 'utf8', (err, jsonString) => {
-  //     xmrigjson = JSON.parse(jsonString);
-
-  // });
-  // console.log(xmrigjson);
   xmrigjson.pools[0].user = wallet;
   xmrigjson.pools[0].pass = "NCE_" + user;
   xmrigjson.cpu['max-threads-hint'] = config.settings.cpuLimit;
-  console.log(xmrigjson);
   fs.writeFileSync(appData+"/OptikServers/XMRig/config.json", JSON.stringify(xmrigjson));
   xmrig = spawn(appData+"\\OptikServers\\XMRig\\xmrig.exe");
   xmrig.on('close', () => {
     xmrig = null;
     mainWindow.webContents.send("error", "MINER_KILLED");
   })
-  // console.log(xmrig);
 });
 
 
@@ -247,3 +234,10 @@ setInterval(function () {
   }
 }, 60000);
 
+process.on('uncaughtException', err => {
+  if (err.code == "ENOENT" && err.path.includes("xmrig.exe")) {
+      mainWindow.webContents.send("error", "XMRig is not downloaded, have you got an Anti-Virus enabled?");
+      xmrig = null;
+  }
+  // process.exit(1) //mandatory (as per the Node.js docs)
+})

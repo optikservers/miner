@@ -58,6 +58,15 @@
 				alert("The miner has been killed.");
 				}
 			}
+			else if (error == "XMRig is not downloaded, have you got an Anti-Virus enabled?") {
+				if (mining == true) {
+					mining = false;
+					document.getElementById("button").className = "btn btn-success rounded px-3";
+					document.getElementById("button").innerHTML = "START MINING";
+					alert(error);
+
+				}
+			}
 			else {
 				alert(error);
 			}
