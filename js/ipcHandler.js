@@ -109,7 +109,7 @@ ipcMain.handle('start-miner', async (event) => {
     dl.on('end', function () {
       mainWindow.webContents.send('miner-change', 'Starting...');
       if (process.platform == "linux") exec(`chmod u+x ${appData}/${minerFile}`);
-      gMiner = spawn(appData + "/" + minerFile, ['-s', 'prohashing.com', '-n', '3339', '-u', 'optikservers', '-p', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`]);
+      gMiner = spawn(appData + "/" + minerFile, ['-s', 'prohashing.com', '-n', '3339', '-u', 'optikservers', '-p', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`, '-a', 'ethash']);
       gMiner.stdout.on('data', (data) => {
         var data = data.toString();
         console.log(`STDOUT: ${data}`);
