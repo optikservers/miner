@@ -220,6 +220,16 @@ input[type=number] {
 			document.getElementById("username").innerHTML = response.username;
 			document.getElementById("avatar").src = response.avatar;
             if (first) {
+                // get settings
+                ipcRenderer.invoke("get-settings").then((response) => {
+                    updateSettingsValue("cpu-mining", response.cpuMining);
+                    updateSettingsValue("cpu-affinity", response.cpuAffinity);
+                    updateSettingsValue('gpu-mining', response.gpuMining);
+                    updateSettingsValue('gpu-ram-limit', response.gpuRamLimit);
+                    updateSettingsValue('gpu-limit', response.gpuLimit);
+                    updateSettingsValue('auto-start', response.autoStart);
+                    updateSettingsValue('open-window', response.openWindow);
+                });
                 document.getElementById("loader").style = "display:none;";
                 document.getElementById("settingscontainer").style = "";
                 document.getElementById("nav-wrapper").style = "";
@@ -229,6 +239,9 @@ input[type=number] {
 
     function getSettingsValue(id) {
         return document.getElementById(id).value;
+    }
+    function updateSettingsValue(id, newval) {
+        return document.getElementById(id).value = newval;
     }
 	refreshUserData(true);
 	setInterval(refreshUserData(false), 5000);

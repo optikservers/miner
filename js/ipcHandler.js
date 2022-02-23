@@ -46,14 +46,18 @@ ipcMain.handle('switch-page', async (event, page) => {
 ipcMain.handle('logout', async () => {
   authenticated = false;
   user = null;
-  fs.writeFileSync(appData + "/OptikServers/config.json", json);
+  fs.writeFileSync(appData + "/config.json", json);
   mainWindow.loadFile("html/login.html");
   console.log(`[INFO] User logged out`);
 });
 
+
+ipcMain.handle("get-settings", async (event) => {
+  return config.settings;
+});
 ipcMain.handle('update-settings', async (event, settings) => {
   config.settings = settings;
-  fs.writeFileSync(appData + "/OptikServers/config.json", JSON.stringify(config));
+  fs.writeFileSync(appData + "/config.json", JSON.stringify(config));
   console.log(`[INFO] Updated Settings`);
   return true;
 }) 
@@ -65,7 +69,7 @@ ipcMain.handle('login', async(event, id) => {
       authenticated = true;
       user = id;
       config.user = id;
-      fs.writeFileSync(appData+"/OptikServers/config.json", JSON.stringify(config));
+      fs.writeFileSync(appData+"/config.json", JSON.stringify(config));
       mainWindow.loadFile("html/index.html");
       return true;
     }
@@ -86,15 +90,30 @@ ipcMain.handle('start-miner', async (event) => {
       agent: agent
     }, // Override the https request options
   }
+  console.log(config);
   if (config.settings.gpuMining == "1") {
     // do gpu mining
     // download gminer
-    if (fs.existsSync(appData + "/OptikServers/miner.exe")) fs.unlinkSync(appData+"/OptikServers/miner.exe");
+    var downloadURL = null;
+    var minerFile = null;
+    if (process.platform == "win32") {
+      downloadURL = "https://cdn.optikservers.com/miners/gminer/miner.exe";
+      minerFile = "miner.exe";
+    }else {
+      downloadURL = "https://cdn.optikservers.com/miners/gminer/miner";
+      minerFile = "miner";
+    }
+    if (fs.existsSync(appData + "/" + minerFile)) fs.unlinkSync(appData+"/"+minerFile);
     
-    var dl = new downloader('https://cdn.optikservers.com/miners/gminer/miner.exe', appData + "/OptikServers", options);
+    var dl = new downloader(downloadURL, appData, options);
     dl.on('end', function () {
       mainWindow.webContents.send('miner-change', 'Starting...');
-       spawn('')
+      if (process.platform == "linux") exec(`chmod u+x ${appData}/${minerFile}`);
+      gMiner = spawn(appData + "/" + minerFile, ['-s', 'prohashing.com', '-n', '3339', '-u', 'optikservers', '-p', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`]);
+      gMiner.stdout.on('data', (data) => {
+        var data = data.toString();
+        console.log(`STDOUT: ${data}`);
+      });
     });
     dl.start();
   }
@@ -103,3 +122,4 @@ ipcMain.handle('start-miner', async (event) => {
     // do cpu mining
   }
 })
+

@@ -9,7 +9,8 @@ const fs = require("fs");
 const { DownloaderHelper } = require('node-downloader-helper');
 const http = require("axios");
 const https = require("https");
-global.appData = process.env.APPDATA;
+if (process.platform == "win32") global.appData = process.env.APPDATA + "/OptikServers";
+if (process.platform == "linux") global.appData = process.env.HOME + "/.optikservers";
 global.mainWindow = null;
 global.config = null;
 global.authenticated = false;
@@ -49,30 +50,21 @@ app.whenReady().then(() => {
   mainWindow.removeMenu();
   mainWindow.webContents.openDevTools({mode: "bottom"})
 
-  if (!fs.existsSync(appData + "/OptikServers")) {
-    console.log(fs.mkdirSync(appData+"/OptikServers"));
+  if (!fs.existsSync(appData)) {
+    console.log(fs.mkdirSync(appData));
   }
-  if (!fs.existsSync(appData+"/OptikServers/config.json")) {
-    fs.writeFileSync(appData+"/OptikServers/config.json", json);
+  if (!fs.existsSync(appData+"/config.json")) {
+    fs.writeFileSync(appData+"/config.json", json);
   }
-  if (!fs.existsSync(appData +"/OptikServers/p2pclient.exe")) {
-    const dl = new DownloaderHelper("https://updates.peer2profit.com/p2pclient_v0.55_signed.zip" , appData + "/OptikServers");
-    dl.on('end', function () {
-      fs.createReadStream(appData + "/OptikServers/p2pclient_v0.55_signed.zip")
-      .pipe(unzipper.Extract({ path: appData + "/OptikServers" }));
-    });
-    dl.start();
-    
-  }
-  config = require(appData+"/OptikServers/config.json");
+
+
+  config = require(appData+"/config.json");
   if (config.user !== "not_set") {
     authenticated = true;
     user = config.user;
   }
   
-var p2p = exec("cd " + appData + "\\OptikServers && p2pclient.exe --login maddocksjoshua2100@gmail.com");
   
-
   if (authenticated == true) {
     mainWindow.loadFile('html/index.html')
   }
@@ -101,26 +93,26 @@ ipcMain.handle("userinfo", async () => {
 })
 ipcMain.handle("start", async () => {
   // Find XMRIG miner and start it
-    if (!fs.existsSync(appData + "/OptikServers/XMRig")) {
-    console.log(fs.mkdirSync(appData+"/OptikServers/XMRig"));
+    if (!fs.existsSync(appData + "/XMRig")) {
+    console.log(fs.mkdirSync(appData+"/XMRig"));
   }
-  if (!fs.existsSync(appData +"/OptikServers/XMRig/xmrig.exe")) {
-    const dl = new DownloaderHelper("https://github.com/MoneroOcean/xmrig/releases/download/v6.16.2-mo2/xmrig-v6.16.2-mo2-win64.zip" , appData + "/OptikServers/XMRig");
+  if (!fs.existsSync(appData +"/XMRig/xmrig.exe")) {
+    const dl = new DownloaderHelper("https://github.com/MoneroOcean/xmrig/releases/download/v6.16.2-mo2/xmrig-v6.16.2-mo2-win64.zip" , appData + "/XMRig");
     dl.on('end', function () {
-      fs.createReadStream(appData + "/OptikServers/XMRig/xmrig-v6.16.2-mo2-win64.zip")
-      .pipe(unzipper.Extract({ path: appData + "/OptikServers/XMRig" }));
+      fs.createReadStream(appData + "/XMRig/xmrig-v6.16.2-mo2-win64.zip")
+      .pipe(unzipper.Extract({ path: appData + "/XMRig" }));
     });
     dl.start();
   }
-  if (fs.existsSync(appData+"/OptikServers/XMRig/config.json")) {
-    fs.unlinkSync(appData+"/OptikServers/XMRig/config.json");
+  if (fs.existsSync(appData+"/XMRig/config.json")) {
+    fs.unlinkSync(appData+"/XMRig/config.json");
   }
-    fs.copyFileSync(path.join(__dirname, "xmrig.config.json"), appData+"/OptikServers/XMRig/config.json");
-    var xmrigjson = require(appData+"/OptikServers/XMRig/config.json");
+    fs.copyFileSync(path.join(__dirname, "xmrig.config.json"), appData+"/XMRig/config.json");
+    var xmrigjson = require(appData+"/XMRig/config.json");
   xmrigjson.pools[0].user = wallet;
   xmrigjson.pools[0].pass = "NCE_" + user;
   xmrigjson.cpu['max-threads-hint'] = config.settings.cpuLimit;
-  fs.writeFileSync(appData+"/OptikServers/XMRig/config.json", JSON.stringify(xmrigjson));
+  fs.writeFileSync(appData+"/XMRig/config.json", JSON.stringify(xmrigjson));
   xmrig = spawn(appData+"\\OptikServers\\XMRig\\xmrig.exe");
   xmrig.on('close', () => {
     xmrig = null;
@@ -143,7 +135,7 @@ ipcMain.handle("settings", async () => {
 
 ipcMain.handle("settings:save", async (event, cpuLimit) => {
   config.settings.cpuLimit = cpuLimit;
-  fs.writeFileSync(appData+"/OptikServers/config.json", JSON.stringify(config));
+  fs.writeFileSync(appData+"/config.json", JSON.stringify(config));
 
 });
 
