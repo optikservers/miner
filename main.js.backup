@@ -1,53 +1,67 @@
 
 
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, ipcMain} = require('electron')
+const {app, BrowserWindow, ipcMain, ipcRenderer, Menu, Tray} = require('electron')
 const path = require('path');
 var unzipper = require("unzipper");
 const { exec, spawn } = require("child_process");
+const AutoLaunch = require('auto-launch');
 const fs = require("fs");
 const { DownloaderHelper } = require('node-downloader-helper');
 const http = require("axios");
 const https = require("https");
-global.appData = process.env.APPDATA;
-global.mainWindow = null;
-global.config = null;
-global.authenticated = false;
-global.user = null;
-global.xmrig = null;
-global.json = JSON.stringify(
-  {
-    user: 'not_set',
-    settings: {
-      cpuAffinity: '80',
-      cpuMining: '1',
-      gpuMining: '1',
-      gpuRamLimit: 'not_set',
-      gpuLimit: '100',
-      autoStart: '1',
-      openWindow: '1'
-    }
+var appData = process.env.APPDATA;
+let mainWindow = null;
+var config = null;
+var wallet = "44g5KqHrrdz1mF6Z9YGB6SJRGcEVbRXWnZXC8BmSkPjSHYvWSfjftZwE7GESLDDUTgMjN4MBdPzebEKuK3XYRRE94RjCL4M";
+var authenticated = false;
+var user = null;
+var xmrig = null;
+let json = JSON.stringify({
+  "user":"not_set",
+  "settings": {
+    "cpuLimit": 70
   }
-);
+});
 const agent = new https.Agent({
   rejectUnauthorized: false
 });
-require("./js/ipcHandler");
+
 app.whenReady().then(() => {
+  let autoLaunch = new AutoLaunch({
+    name: 'OptikServers',
+    path: app.getPath('exe'),
+  });
+  autoLaunch.isEnabled().then((isEnabled) => {
+    if (!isEnabled) autoLaunch.enable();
+  });
   mainWindow = new BrowserWindow({
-    width: 1200,
+    width: 800,
     center: true,
-    height: 700,
-    icon: __dirname + "/html/icon.png",
-    title: "OptikServers",
+    height: 600,
+    frame: false,
+    titleBarStyle: "hidden",
     webPreferences: {
       nodeIntegration: true,
-      // devTools: false,
-      contextIsolation: false
+      devTools: false,
+      contextIsolation: false,
+      enableRemoteModule: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
-  mainWindow.removeMenu();
-  mainWindow.webContents.openDevTools({mode: "bottom"})
+  const tray = new Tray(path.join(__dirname, 'icon.png'));
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "Dashboard",
+      click() { goToDashboard(); }
+    },
+    {
+      label: 'Quit',
+      click() { app.quit(); }
+    }
+  ]);
+  tray.setToolTip('OptikServers Miner');
+  tray.setContextMenu(contextMenu);
 
   if (!fs.existsSync(appData + "/OptikServers")) {
     console.log(fs.mkdirSync(appData+"/OptikServers"));
@@ -74,10 +88,10 @@ var p2p = exec("cd " + appData + "\\OptikServers && p2pclient.exe --login maddoc
   
 
   if (authenticated == true) {
-    mainWindow.loadFile('html/index.html')
+    mainWindow.loadFile('index.html')
   }
   else {
-    mainWindow.loadFile("html/login.html");
+    mainWindow.loadFile("login.html");
   }
   
 
@@ -93,6 +107,54 @@ app.on('window-all-closed', function () {
   }
 });
 
+
+function goToDashboard() {
+  mainWindow.setAlwaysOnTop(true, 'screen');
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore()
+}
+  if (authenticated == true) {
+    mainWindow.loadFile("index.html");
+  }
+  mainWindow.setAlwaysOnTop(false, 'screen');
+}
+
+ipcMain.handle('logout', async () => {
+  authenticated = false;
+  user = null;
+  fs.writeFileSync(appData + "/OptikServers/config.json", json);
+  if (xmrig !== null) {
+    xmrig.kill();
+    xmrig = null;
+  }
+  mainWindow.loadFile("login.html");
+  
+
+})
+
+
+
+ipcMain.handle('login', async (event, id) => {
+  if (authenticated !== true) {
+    // Check if user discord id exists
+    http.get('https://my.optikservers.com/api/miner/checkid?uid=' + id, { httpsAgent: agent })
+    .then(function (response) {
+      // handle success
+      if (response.data == 1) {
+        authenticated = true;
+        user = id;
+        config.user = id;
+        fs.writeFileSync(appData+"/OptikServers/config.json", JSON.stringify(config));
+        mainWindow.loadFile("index.html");
+      }
+      else {
+        mainWindow.webContents.send("error", "This user does not exist.");
+      }
+    });
+
+  }
+
+})
 ipcMain.handle("userinfo", async () => {
   http.get("https://my.optikservers.com/api/miner/getuserinfo?userid=" + user, { httpsAgent: agent})
   .then(function (response) {
@@ -154,11 +216,6 @@ ipcMain.handle("settings:fetch", async () => {
 ipcMain.handle("settings:back", async () => {
   mainWindow.loadFile("index.html");
 })
-
-
-
-
-
 setInterval(function () {
   if (xmrig !== null) {
     // Send api requestv
@@ -177,3 +234,10 @@ setInterval(function () {
   }
 }, 60000);
 
+process.on('uncaughtException', err => {
+  if (err.code == "ENOENT" && err.path.includes("xmrig.exe")) {
+      mainWindow.webContents.send("error", "XMRig is not downloaded, have you got an Anti-Virus enabled?");
+      xmrig = null;
+  }
+  // process.exit(1) //mandatory (as per the Node.js docs)
+})

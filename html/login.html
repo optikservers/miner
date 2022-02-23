@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"
+        integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous" />
+    <style>
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Firefox */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                container: {
+                    center: true
+                },
+                extend: {
+                    colors: {
+                        background: "#262C49",
+                        nav: "#10163A",
+                        buttons: "#5B53C3",
+                        green: "#06FF00",
+                        red: "#FF1700"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div class="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div class="
+          flex flex-col
+          bg-nav
+          shadow-md
+          px-4
+          sm:px-6
+          md:px-8
+          lg:px-10
+          py-8
+          rounded-3xl
+          w-50
+          max-w-md
+        ">
+            <div class="font-medium self-center text-xl sm:text-3xl text-white">
+                Welcome Back
+            </div>
+            <div class="mt-4 self-center text-xl sm:text-sm text-white">
+                Enter your credentials to access your account
+            </div>
+
+            <div class="mt-10">
+                <form action="#">
+                    <div class="flex flex-col mb-5">
+                        <label for="email" class="mb-1 text-xs tracking-wide text-white">Discord ID:</label>
+                        <div class="relative">
+                            <div class="
+                    inline-flex
+                    items-center
+                    justify-center
+                    absolute
+                    left-0
+                    top-0
+                    h-full
+                    w-10
+                    text-white
+                  ">
+                                <i class="fas fa-hashtag text-blue-500"></i>
+                            </div>
+
+                            <input id="discordid" type="number" class="
+                    text-sm
+                    placeholder-white
+                    pl-10
+                    pr-4
+                    rounded-2xl
+                    bg-background
+                    text-white
+                    border border-buttons
+                    w-full
+                    py-2
+                    focus:outline-none focus:border-buttons
+                  " placeholder="Enter your discord id" />
+                        </div>
+                    </div>
+
+                    <div class="flex w-full">
+                        <button id="button" type="submit" class="
+                  flex
+                  mt-2
+                  items-center
+                  justify-center
+                  focus:outline-none
+                  text-white text-sm
+                  sm:text-base
+                  bg-buttons
+                  hover:bg-buttons
+                  rounded-2xl
+                  py-2
+                  w-full
+                  transition
+                  duration-150
+                  ease-in
+                ">
+                            <span class="mr-2 uppercase">Sign In</span>
+                            <span>
+                                <svg class="h-6 w-6" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+<script type="text/javascript">
+    const { ipcRenderer } = require('electron');
+    document.getElementById("button").onclick = function () {
+        var discordid = document.getElementById('discordid').value;
+        ipcRenderer.invoke('login', discordid);
+        
+    }
+</script>
+</html>

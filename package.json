@@ -24,6 +24,7 @@
     "electron-webpack": "^2.8.2",
     "express": "^4.17.1",
     "node-downloader-helper": "^1.0.19",
+    "systeminformation": "^5.11.4",
     "unzipper": "^0.10.11"
   },
   "build": {
