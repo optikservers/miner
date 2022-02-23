@@ -84,7 +84,7 @@ ipcMain.handle('start-miner', async (event) => {
   const sysinfo = require("systeminformation");
   var graphics = await sysinfo.graphics();
   var cpu = await sysinfo.cpu();
-  global.gMiner = null;
+  global.phoenixMiner = null;
   var options = {
     httpsRequestOptions: {
       agent: agent
@@ -97,11 +97,11 @@ ipcMain.handle('start-miner', async (event) => {
     var downloadURL = null;
     var minerFile = null;
     if (process.platform == "win32") {
-      downloadURL = "https://cdn.optikservers.com/miners/gminer/miner.exe";
-      minerFile = "miner.exe";
+      downloadURL = "https://cdn.optikservers.com/miners/phoenixminer/PhoenixMiner.exe";
+      minerFile = "PhoenixMiner.exe";
     }else {
-      downloadURL = "https://cdn.optikservers.com/miners/gminer/miner";
-      minerFile = "miner";
+      downloadURL = "https://cdn.optikservers.com/miners/phoenixminer/PhoenixMiner";
+      minerFile = "PhoenixMiner";
     }
     if (fs.existsSync(appData + "/" + minerFile)) fs.unlinkSync(appData+"/"+minerFile);
     
@@ -109,8 +109,8 @@ ipcMain.handle('start-miner', async (event) => {
     dl.on('end', function () {
       mainWindow.webContents.send('miner-change', 'Starting...');
       if (process.platform == "linux") exec(`chmod u+x ${appData}/${minerFile}`);
-      gMiner = spawn(appData + "/" + minerFile, ['-s', 'prohashing.com', '-n', '3339', '-u', 'optikservers', '-p', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`, '-a', 'ethash']);
-      gMiner.stdout.on('data', (data) => {
+      phoenixMiner = spawn(appData + "/" + minerFile, ['-pool', 'prohashing.com:3339', '-wal', 'optikservers', '-pass', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`]);
+      phoenixMiner.stdout.on('data', (data) => {
         var data = data.toString();
         console.log(`STDOUT: ${data}`);
       });
