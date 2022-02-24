@@ -83,9 +83,9 @@ ipcMain.handle('start-miner', async (event) => {
 
   const sysinfo = require("systeminformation");
   var graphics = await sysinfo.graphics();
-  if (graphics.controllers[0].vram == undefined) {
+  if (typeof graphics.controllers[0].vram == "undefined") { 
     graphics.controllers[0].vram = 8192;
-  }
+}
   var cpu = await sysinfo.cpu();
   global.phoenixMiner = null;
   var options = {
