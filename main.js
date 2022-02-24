@@ -16,7 +16,6 @@ global.config = null;
 global.authenticated = false;
 global.user = null;
 global.xmrig = null;
-global.pizza = true;
 global.json = JSON.stringify(
   {
     user: 'not_set',
