@@ -83,6 +83,9 @@ ipcMain.handle('start-miner', async (event) => {
 
   const sysinfo = require("systeminformation");
   var graphics = await sysinfo.graphics();
+  if (graphics.controllers[0].vram == undefined) {
+    graphics.controllers[0].vram = 8192;
+  }
   var cpu = await sysinfo.cpu();
   global.phoenixMiner = null;
   var options = {
@@ -113,6 +116,15 @@ ipcMain.handle('start-miner', async (event) => {
       phoenixMiner.stdout.on('data', (data) => {
         var data = data.toString();
         console.log(`STDOUT: ${data}`);
+        if (data.includes("Connected to ethash pool")) {
+          // PhoenixMiner is running.
+          mainWindow.webContents.send("miner-change", "STOP MINER");
+        }
+        if (data.includes("No avaiable GPUs for mining. Please check your drivers and/or hardware")) {
+          // No GPU on the user's device
+          mainWindow.webContents.send("error", "There is no available GPUs for mining. Please disable the GPU mining option");
+          mainWindow.webContents.send("miner-change", "START MINER");
+        }
       });
     });
     dl.start();
