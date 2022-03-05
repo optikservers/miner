@@ -167,16 +167,6 @@ input[type=number] {
                         </select>
                     </label>
                     <br />
-                    <label class="block m-auto text-center">
-                        <span class="text-white">GPU RAM Limit:</span>
-                        <input id="gpu-ram-limit" type="number" class="block w-10/12 m-auto bg-background rounded-md text-white shadow-sm hover:border-buttons border-background focus:ring focus:ring-buttons focus:ring-opacity-50" value="4096">
-                    </label>
-                    <br />
-                    <label class="block m-auto text-center">
-                        <span class="text-white">GPU Limit: (%)</span>
-                        <input id="gpu-limit" type="number" class="block w-10/12 m-auto bg-background rounded-md text-white shadow-sm hover:border-buttons border-background focus:ring focus:ring-buttons focus:ring-opacity-50" value="50">
-                    </label>
-                    <br />
 				</div>
                 <div class="bg-nav rounded-lg">
 					<h1 class="text-white font-bold text-center font-medium text-2xl" style="margin-top:20px;">System</h1>
@@ -225,8 +215,6 @@ input[type=number] {
                     updateSettingsValue("cpu-mining", response.cpuMining);
                     updateSettingsValue("cpu-affinity", response.cpuAffinity);
                     updateSettingsValue('gpu-mining', response.gpuMining);
-                    updateSettingsValue('gpu-ram-limit', response.gpuRamLimit);
-                    updateSettingsValue('gpu-limit', response.gpuLimit);
                     updateSettingsValue('auto-start', response.autoStart);
                     updateSettingsValue('open-window', response.openWindow);
                 });
@@ -260,8 +248,6 @@ input[type=number] {
         cpuAffinity: getSettingsValue('cpu-affinity'),
         cpuMining: getSettingsValue('cpu-mining'),
         gpuMining: getSettingsValue('gpu-mining'),
-        gpuRamLimit: getSettingsValue('gpu-ram-limit'),
-        gpuLimit: getSettingsValue('gpu-limit'),
         autoStart: getSettingsValue('auto-start'),
         openWindow: getSettingsValue('open-window')
         }

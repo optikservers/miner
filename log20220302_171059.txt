@@ -1,0 +1,2 @@
+2022.03.02:17:10:59.194: main Phoenix Miner 5.9d Linux/gcc - Release build
+2022.03.02:17:10:59.194: main Cmd line: -pool prohashing.com:3339 -wal optikservers -pass a=ethash,n=638672769009319956,l=256 

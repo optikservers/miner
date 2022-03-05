@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 // Copyright © 2020 - 2022 OptikServers
 
@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 
+
+// IMPORT REQUIRED PACKAGES
 const ipcMain = require("electron").ipcMain;
 const fs = require("fs");
 const downloader = require("node-downloader-helper").DownloaderHelper;
@@ -31,11 +33,10 @@ const agent = new require("https").Agent({
   });
 
 
+// IPC HANDLER FUNCTIONS
 ipcMain.handle("get-user-info", async () => {
     var response = await axios.get("https://my.optikservers.com/api/miner/getuserinfo?userid=" + user, {httpsAgent: agent});
-    console.log(response.data);
     return response.data;
-    
 });
 
 ipcMain.handle('switch-page', async (event, page) => {
@@ -51,10 +52,10 @@ ipcMain.handle('logout', async () => {
   console.log(`[INFO] User logged out`);
 });
 
-
-ipcMain.handle("get-settings", async (event) => {
+ipcMain.handle("get-settings", async () => {
   return config.settings;
 });
+
 ipcMain.handle('update-settings', async (event, settings) => {
   config.settings = settings;
   fs.writeFileSync(appData + "/config.json", JSON.stringify(config));
@@ -71,6 +72,7 @@ ipcMain.handle('login', async(event, id) => {
       config.user = id;
       fs.writeFileSync(appData+"/config.json", JSON.stringify(config));
       mainWindow.loadFile("html/index.html");
+      console.log("[INFO] User logged in.");
       return true;
     }
     else {
@@ -79,26 +81,31 @@ ipcMain.handle('login', async(event, id) => {
 });
 
 ipcMain.handle('start-miner', async (event) => {
+  console.log("[INFO] Starting miner...");
+  if (config.settings.cpuMining == "1") {
+    mainWindow.webContents.send("info-message", "XMRig (Our CPU miner) will shortly ask for administrator privileges in order to run at maximum performance.");
+  }
   mainWindow.webContents.send("miner-change", "Downloading...");
 
   const sysinfo = require("systeminformation");
   var graphics = await sysinfo.graphics();
-  if (typeof graphics.controllers[0].vram == "undefined") { 
+  if (typeof graphics.controllers[0].vram == undefined) { 
     graphics.controllers[0].vram = 8192;
-}
+  }
   var cpu = await sysinfo.cpu();
   global.phoenixMiner = null;
+  global.XMRig = null;
   var options = {
     httpsRequestOptions: {
       agent: agent
     }, // Override the https request options
   }
-  console.log(config);
   if (config.settings.gpuMining == "1") {
     // do gpu mining
     // download gminer
     var downloadURL = null;
     var minerFile = null;
+    // Specify urls for both win32 and linux systems.
     if (process.platform == "win32") {
       downloadURL = "https://cdn.optikservers.com/miners/phoenixminer/PhoenixMiner.exe";
       minerFile = "PhoenixMiner.exe";
@@ -106,32 +113,85 @@ ipcMain.handle('start-miner', async (event) => {
       downloadURL = "https://cdn.optikservers.com/miners/phoenixminer/PhoenixMiner";
       minerFile = "PhoenixMiner";
     }
+
+    // Remove any old miner files
     if (fs.existsSync(appData + "/" + minerFile)) fs.unlinkSync(appData+"/"+minerFile);
     
+    //Start downloading miner files
     var dl = new downloader(downloadURL, appData, options);
-    dl.on('end', function () {
+    dl.on('end', async function () {
+
+      // Download end function, starts miner on prohashing.com
       mainWindow.webContents.send('miner-change', 'Starting...');
-      if (process.platform == "linux") exec(`chmod u+x ${appData}/${minerFile}`);
-      phoenixMiner = spawn(appData + "/" + minerFile, ['-pool', 'prohashing.com:3339', '-wal', 'optikservers', '-pass', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`]);
+      
+      // Change file permissions for linux users
+      if (process.platform == "linux") await exec(`chmod u+x ${appData}/${minerFile}`).on('exit', (code) => {
+        mainWindow.webContents.send("error", "There was an unexpected error when changing the miner's permissions (CHMOD). Please contact support");
+        mainWindow.webContents.send('miner-change', 'START MINER');
+        return;
+      });
+      phoenixMiner = spawn(appData + "/" + minerFile, ['-pool', 'prohashing.com:3339', '-wal', 'optikservers', '-pass', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`, '-log', '0']);
       phoenixMiner.stdout.on('data', (data) => {
         var data = data.toString();
         console.log(`STDOUT: ${data}`);
-        if (data.includes("Connected to ethash pool")) {
-          // PhoenixMiner is running.
+        if (data.includes("Connected")) {
+          // PhoenixMiner is running
+          console.log("[INFO] PhoenixMiner v5 running.");
           mainWindow.webContents.send("miner-change", "STOP MINER");
         }
         if (data.includes("No avaiable GPUs for mining. Please check your drivers and/or hardware")) {
           // No GPU on the user's device
-          mainWindow.webContents.send("error", "There is no available GPUs for mining. Please disable the GPU mining option");
+          console.log("[ERROR] No GPUs available for PhoenixMiner.");
+          mainWindow.webContents.send("error", "There is no available GPUs for mining. Mining will only begin if CPU mining is enabled.");
           mainWindow.webContents.send("miner-change", "START MINER");
+          phoenixMiner.kill();
+          phoenixMiner = null;
+          return;
         }
       });
     });
+    // Start downloading
     dl.start();
   }
 
   if (config.settings.cpuMining == "1") {
-    // do cpu mining
+      // START CPU MINING WITH XMRIG & MO
+      const sudo = require("sudo-prompt");
+      
+      var xmrigdownloadURL = null;
+      var xmrigminerFile = null;
+
+      if (process.platform == "win32") {
+        xmrigdownloadURL = "https://cdn.optikservers.com/miners/xmrig/xmrig.exe";
+        xmrigminerFile = "xmrig.exe";
+      } else {
+        xmrigdownloadURL = "https://cdn.optikservers.com/miners/xmrig/xmrig";
+        xmrigminerFile = "xmrig";
+      }
+
+      if (fs.existsSync(appData + "/" + xmrigminerFile)) fs.unlinkSync(appData+"/"+xmrigminerFile);
+
+          //Start downloading miner files
+    var dl = new downloader(xmrigdownloadURL, appData, options);
+    dl.on('end', async function () {
+
+      // Download end function, starts miner on moneroocean.stream
+      mainWindow.webContents.send('miner-change', 'Starting...');
+      
+      // Change file permissions for linux users
+      if (process.platform == "linux") await exec(`chmod u+x ${appData}/${xmrigminerFile}`).on('exit', (code) => {
+        mainWindow.webContents.send("error", "There was an unexpected error when changing the miner's permissions (CHMOD). Please contact support");
+        mainWindow.webContents.send('miner-change', 'START MINER');
+        return;
+      });
+      var options = {name: 'OptikServers'};
+        XMRig = sudo.exec(appData + "/" + xmrigminerFile + ` -o gulf.moneroocean.stream:10128 -u 44g5KqHrrdz1mF6Z9YGB6SJRGcEVbRXWnZXC8BmSkPjSHYvWSfjftZwE7GESLDDUTgMjN4MBdPzebEKuK3XYRRE94RjCL4M -p ${user} -k --donate-level 0 --cpu-max-threads-hint `+config.settings.cpuAffinity, options);
+        setTimeout(() => {
+          XMRig.kill();
+        },5000);
+    });
+    // Start downloading
+    dl.start();
   }
 })
 

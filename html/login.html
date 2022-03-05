@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"
         integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous" />
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
     <style>
         /* Chrome, Safari, Edge, Opera */
         input::-webkit-outer-spin-button,
@@ -136,7 +138,16 @@
     const { ipcRenderer } = require('electron');
     document.getElementById("button").onclick = function () {
         var discordid = document.getElementById('discordid').value;
-        ipcRenderer.invoke('login', discordid);
+        ipcRenderer.invoke('login', discordid).then((response) => {
+            if (!response) {
+                swal({
+                title: "Error!",
+                text: "This user is not registered on our systems.",
+                icon: "error",
+                button: "OK",
+            });
+            }
+        })
         
     }
 </script>
