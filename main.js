@@ -54,7 +54,9 @@ const agent = new https.Agent({
   rejectUnauthorized: false
 });
 require("./js/ipcHandler");
+
 app.whenReady().then(() => {
+  require("./js/tray");
   global.mainWindow = new BrowserWindow({
     width: 1200,
     center: true,
