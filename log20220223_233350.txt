@@ -1,6 +1,0 @@
-2022.02.23:23:33:50.091: main Phoenix Miner 5.9d Linux/gcc - Release build
-2022.02.23:23:33:50.091: main Cmd line: -pool prohashing.com:3339 -wal optikservers -pass a=ethash,n=424330783822577674,l=256 
-2022.02.23:23:33:50.091: main No CUDA driver found
-2022.02.23:23:33:50.093: main No OpenCL platforms found
-2022.02.23:23:33:50.093: main No avaiable GPUs for mining. Please check your drivers and/or hardware.
-2022.02.23:23:33:50.093: main Exit code: 8
