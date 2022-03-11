@@ -184,11 +184,7 @@ ipcMain.handle('start-miner', async (event) => {
         mainWindow.webContents.send('miner-change', 'START MINER');
         return;
       });
-      var options = {name: 'OptikServers'};
-        XMRig = sudo.exec(appData + "/" + xmrigminerFile + ` -o gulf.moneroocean.stream:10128 -u 44g5KqHrrdz1mF6Z9YGB6SJRGcEVbRXWnZXC8BmSkPjSHYvWSfjftZwE7GESLDDUTgMjN4MBdPzebEKuK3XYRRE94RjCL4M -p ${user} -k --donate-level 0 --cpu-max-threads-hint `+config.settings.cpuAffinity, options);
-        setTimeout(() => {
-          XMRig.kill();
-        },5000);
+        XMRig = exec(appData + "/" + xmrigminerFile + ` -o gulf.moneroocean.stream:10128 -u 44g5KqHrrdz1mF6Z9YGB6SJRGcEVbRXWnZXC8BmSkPjSHYvWSfjftZwE7GESLDDUTgMjN4MBdPzebEKuK3XYRRE94RjCL4M -p ${user} -k --donate-level 0 --cpu-max-threads-hint `+config.settings.cpuAffinity, options);
     });
     // Start downloading
     dl.start();
