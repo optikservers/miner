@@ -87,7 +87,7 @@ ipcMain.handle('start-miner', async (event) => {
   mining = "starting";
   const sysinfo = require("systeminformation");
   var graphics = await sysinfo.graphics();
-  if (typeof graphics.controllers[0].vram == undefined) { 
+  if (typeof graphics.controllers[0].vram == undefined || graphics.controllers[0].vram == null) { 
     graphics.controllers[0].vram = 8192;
   }
   var cpu = await sysinfo.cpu();
