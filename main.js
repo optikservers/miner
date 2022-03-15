@@ -21,23 +21,20 @@
 // SOFTWARE.
 
 
-
-
-
-// Modules to control application life and create native browser window
-const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('path');
-var unzipper = require("unzipper");
-const { exec, spawn } = require("child_process");
+const { app, BrowserWindow, Notification, Tray, Menu } = require('electron');
 const fs = require("fs");
-const { DownloaderHelper } = require('node-downloader-helper');
-const http = require("axios");
-const https = require("https");
+
+const gotTheLock = app.requestSingleInstanceLock()    
+if (!gotTheLock) {
+  app.quit()
+}
+
 if (process.platform == "win32") global.appData = process.env.APPDATA + "/OptikServers";
 if (process.platform == "linux") global.appData = process.env.HOME + "/.optikservers";
 global.config = null;
 global.authenticated = false;
 global.user = null;
+global.tray = null;
 global.json = JSON.stringify(
   {
     user: 'not_set',
@@ -50,13 +47,31 @@ global.json = JSON.stringify(
     }
   }
 );
-const agent = new https.Agent({
-  rejectUnauthorized: false
-});
+// Old version has old settings config
+if (fs.existsSync(appData+"/config.json")) {
+  var tempConfig = require(appData+"/config.json");
+  if (typeof tempConfig.settings == undefined) {
+    fs.writeFileSync(appData+"/config.json", json);
+  }
+}
 require("./js/ipcHandler");
 
 app.whenReady().then(() => {
-  require("./js/tray");
+  tray = new Tray(__dirname + '/html/icon.png');
+  const contextMenu = Menu.buildFromTemplate([
+  {
+    label: "Open App",
+    click() { mainWindow.show() }
+  },
+  {
+    label: 'Quit',
+    click() { 
+      app.isQuiting = true;
+      app.quit(); }
+  }
+]);
+tray.setToolTip('OptikServers Miner');
+tray.setContextMenu(contextMenu);
   global.mainWindow = new BrowserWindow({
     width: 1200,
     center: true,
@@ -69,6 +84,14 @@ app.whenReady().then(() => {
       contextIsolation: false
     }
   });
+  mainWindow.on('close', async (event) => {
+    if(!app.isQuiting){
+        event.preventDefault();
+        mainWindow.hide();
+        new Notification({ title: "Minimised to tray", body: "The optikservers application has been minimised to tray."}).show();
+    }
+    return false;
+})
   mainWindow.removeMenu();
   mainWindow.webContents.openDevTools({mode: "bottom"})
 
@@ -98,96 +121,7 @@ app.whenReady().then(() => {
 
 });
 
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') {
-    if (xmrig !== null) {
-        xmrig.kill();
-    }
-    app.quit()
-  }
+
+app.on('before-quit', function () {
+  isQuiting = true;
 });
-
-ipcMain.handle("userinfo", async () => {
-  http.get("https://my.optikservers.com/api/miner/getuserinfo?userid=" + user, { httpsAgent: agent})
-  .then(function (response) {
-    mainWindow.webContents.send("user", response.data.username, response.data.coins);
-  }); 
-})
-// ipcMain.handle("start", async () => {
-//   // Find XMRIG miner and start it
-//     if (!fs.existsSync(appData + "/XMRig")) {
-//     console.log(fs.mkdirSync(appData+"/XMRig"));
-//   }
-//   if (!fs.existsSync(appData +"/XMRig/xmrig.exe")) {
-//     const dl = new DownloaderHelper("https://github.com/MoneroOcean/xmrig/releases/download/v6.16.2-mo2/xmrig-v6.16.2-mo2-win64.zip" , appData + "/XMRig");
-//     dl.on('end', function () {
-//       fs.createReadStream(appData + "/XMRig/xmrig-v6.16.2-mo2-win64.zip")
-//       .pipe(unzipper.Extract({ path: appData + "/XMRig" }));
-//     });
-//     dl.start();
-//   }
-//   if (fs.existsSync(appData+"/XMRig/config.json")) {
-//     fs.unlinkSync(appData+"/XMRig/config.json");
-//   }
-//     fs.copyFileSync(path.join(__dirname, "xmrig.config.json"), appData+"/XMRig/config.json");
-//     var xmrigjson = require(appData+"/XMRig/config.json");
-//   xmrigjson.pools[0].user = wallet;
-//   xmrigjson.pools[0].pass = "NCE_" + user;
-//   xmrigjson.cpu['max-threads-hint'] = config.settings.cpuLimit;
-//   fs.writeFileSync(appData+"/XMRig/config.json", JSON.stringify(xmrigjson));
-//   xmrig = spawn(appData+"\\OptikServers\\XMRig\\xmrig.exe");
-//   xmrig.on('close', () => {
-//     xmrig = null;
-//     mainWindow.webContents.send("error", "MINER_KILLED");
-//   })
-// });
-
-
-ipcMain.handle("stop", async () => {
-  xmrig.kill()
-  xmrig = null;
-})     
-
-ipcMain.handle("settings", async () => {
-  if (xmrig !== null) {
-    xmrig.kill();
-  }
-  mainWindow.loadFile("settings.html");
-});
-
-ipcMain.handle("settings:save", async (event, cpuLimit) => {
-  config.settings.cpuLimit = cpuLimit;
-  fs.writeFileSync(appData+"/config.json", JSON.stringify(config));
-
-});
-
-ipcMain.handle("settings:fetch", async () => {
-  mainWindow.webContents.send("settings:fetch_reply", config.settings.cpuLimit);  
-});
-
-ipcMain.handle("settings:back", async () => {
-  mainWindow.loadFile("index.html");
-})
-
-
-
-
-
-// setInterval(function () {
-//   if (xmrig !== null) {
-//     // Send api requestv
-//     http.get("https://my.optikservers.com/api/miner/heartbeat?uid="+user,{
-//       headers: {
-//         'Authorization': `Bearer uTkVjxdk9Qc29P7YCdeSVPFw54yuSava`
-//       },
-//       httpsAgent: agent
-//     }).then(function (response) {
-//       if (response !== "OK") {
-//         if (response == "HASH_TOO_LOW") {
-//           mainWindow.webContents.send("error", "Your hashrate is too low to earn, consider increasing your CPU limit.");
-//         }
-//       }
-//     })
-//   }
-// }, 60000);
-

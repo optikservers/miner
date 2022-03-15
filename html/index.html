@@ -99,7 +99,7 @@
 			<div class="flex">
 				<div class="m-auto">
 					<br><br><br>
-					<button id="start" type="button" class="bg-buttons text-white rounded-lg px-5 py-3 font-medium text-4xl focus:outline-none" id="start-mining" aria-expanded="false" aria-haspopup="true">START MINER</button>
+					<button id="start" type="button" class="bg-buttons text-white rounded-lg px-5 py-3 font-medium text-4xl focus:outline-none disabled" id="start-mining" aria-expanded="false" aria-haspopup="true">START MINER</button>
 				    <br><br><br><br><br>
 				</div>
 			  </div>
@@ -108,7 +108,7 @@
 			<div class="grid gap-4 float-right grid-cols-3 rounded-lg grid-rows-2 mx-auto" style="width:49%; height:70%;">
 				<div class="bg-nav rounded-lg">
 					<h1 class="text-white font-bold text-center font-medium text-2xl" style="margin-top:20px;">Hashrate</h1>
-					<h1 class="text-white text-center font-medium text-xl" style="margin-top:35px;">0.00h/s</h1>
+					<h1 id="hashrate" class="text-white text-center font-medium text-xl" style="margin-top:35px;">0.00h/s</h1>
 					<br />
 				</div>
 				<div class="bg-nav rounded-lg">
@@ -118,22 +118,22 @@
 				</div>
 				<div class="bg-nav rounded-lg">
 					<h1 class="text-white text-center font-bold font-medium text-2xl bold" style="margin-top:20px;">Earning Rate</h1>
-					<h1 class="text-white text-center font-medium text-xl" style="margin-top:35px;">0.00/min</h1>
+					<h1 id="rate" class="text-white text-center font-medium text-xl" style="margin-top:35px;">0.00/min</h1>
 					<br />
 				</div>
 				<div class="bg-nav rounded-lg">
 					<h1 class="text-white text-center font-bold font-medium text-2xl" style="margin-top:20px;">Miner</h1>
-					<h1 class="text-white text-center font-medium text-xl" style="margin-top:35px;">N/A</h1>
+					<h1 class="text-white text-center font-medium text-xl" style="margin-top:35px;">PhoenixMiner & XMRig</h1>
 					<br />
 				</div>
 				<div class="bg-nav rounded-lg">
 					<h1 class="text-white text-center font-medium font-bold text-2xl" style="margin-top:20px;">Algo</h1>
-					<h1 class="text-white text-center font-medium font-bold text-xl" style="margin-top:35px;">N/A</h1>
+					<h1 class="text-white text-center font-medium font-bold text-xl" style="margin-top:35px;">Ethash & RandomX</h1>
 					<br />
 				</div>
 				<div class="bg-nav rounded-lg">
 					<h1 class="text-white text-center font-medium font-bold text-2xl" style="margin-top:20px;">Mining type</h1>
-					<h1 class="text-white text-center font-medium font-bold text-xl" style="margin-top:35px;">N/A</h1>
+					<h1 id="type" class="text-white text-center font-medium font-bold text-xl" style="margin-top:35px;">N/A</h1>
 					<br />
 				</div>
 			  </div>
@@ -146,25 +146,68 @@
 </body>
 
 <script type="text/javascript">
+	let mining = "stopped";
 	const { ipcRenderer } = require("electron");
 	function refreshUserData() {
 		ipcRenderer.invoke("get-user-info").then((response) => {
 			document.getElementById("username").innerHTML = response.username;
 			document.getElementById("avatar").src = response.avatar;
 			document.getElementById('coins').innerHTML = response.coins;
+			ipcRenderer.invoke("get-miner-status").then((response) => {
+                if (response == "starting") {
+                    mining = "starting";
+				} else if (response == "running") {
+					mining = "running";
+					document.getElementById('start').innerHTML = "STOP MINER";
+
+				}
+			});
+			ipcRenderer.invoke("get-hashrate").then((response) => {
+				document.getElementById("hashrate").innerHTML = response;
+			});
+			ipcRenderer.invoke("get-earning").then((response) => {
+				document.getElementById("rate").innerHTML = response + "/min";
+			});
+		    ipcRenderer.invoke('get-mining-type').then((response) => {
+				document.getElementById("type").innerHTML = response;
+			});
 			document.getElementById("loader").style = "display:none;";
             document.getElementById("minercontainer").style = "";
             document.getElementById("nav-wrapper").style = "";
 		});
 	}
-
+    
 	document.getElementById('start').onclick = function () {
-		ipcRenderer.invoke('start-miner');
+			 if (mining == "stopped") {
+				 ipcRenderer.invoke('start-miner');
+			 } else if (mining == "running") { 
+				 ipcRenderer.invoke('stop-miner');
+				}
 	}
 	refreshUserData();
-	setInterval(refreshUserData(), 5000);
+	setInterval(() => {
+		ipcRenderer.invoke("get-user-info").then((response) => {
+			document.getElementById("username").innerHTML = response.username;
+			document.getElementById("avatar").src = response.avatar;
+			document.getElementById('coins').innerHTML = response.coins;
+			ipcRenderer.invoke("get-hashrate").then((response) => {
+				document.getElementById("hashrate").innerHTML = response;
+			})
+			ipcRenderer.invoke("get-earning").then((response) => {
+				document.getElementById("rate").innerHTML = response + "/min";
+			})
+			document.getElementById("loader").style = "display:none;";
+            document.getElementById("minercontainer").style = "";
+            document.getElementById("nav-wrapper").style = "";
+		});
+	}, 5000);
     ipcRenderer.on('miner-change', async (evt, change) => {
         document.getElementById('start').innerHTML = change;
+		if (change == "START MINER") mining = "stopped";
+		if (change == "STOP MINER") mining = "running";
+	});
+	ipcRenderer.on('remove-disabled', async () => {
+        document.getElementById("start").removeAttribute("disabled");
 	});
 	var swalDone = null;
 	ipcRenderer.on('error', (evt, message) => {
