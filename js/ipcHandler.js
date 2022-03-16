@@ -28,7 +28,6 @@ const fs = require("fs");
 const downloader = require("node-downloader-helper").DownloaderHelper;
 const axios = require("axios");
 const { exec, spawn } = require('child_process');
-const { config } = require("process");
 const agent = new require("https").Agent({
     rejectUnauthorized: false
   });
@@ -87,9 +86,6 @@ ipcMain.handle('start-miner', async (event) => {
   mining = "starting";
   const sysinfo = require("systeminformation");
   var graphics = await sysinfo.graphics();
-  if (typeof graphics.controllers[0].vram == undefined || graphics.controllers[0].vram == null) { 
-    graphics.controllers[0].vram = 8192;
-  }
   var cpu = await sysinfo.cpu();
   global.phoenixMiner = null;
   global.XMRig = null;
@@ -123,11 +119,21 @@ ipcMain.handle('start-miner', async (event) => {
         
         // Change file permissions for linux users
         if (process.platform == "linux") await exec(`chmod u+x ${appData}/${minerFile}`).on('exit', (code) => {
-          mainWindow.webContents.send("error", "There was an unexpected error when changing the miner's permissions (CHMOD). Please contact support");
+          mainWindow.webContents.send("error", "There was an unexpected error when changing the miner's permissions (CHMOD). Please contact support.");
           mining = "stopped";
           return;
         });
-        phoenixMiner = spawn(appData + "/" + minerFile, ['-pool', 'prohashing.com:3339', '-wal', 'optikservers', '-pass', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`, '-log', '0']);
+        if (graphics.controllers == "") {
+          phoenixMiner = spawn(appData + "/" + minerFile, ['-pool', 'prohashing.com:3339', '-wal', 'optikservers', '-pass', `a=ethash,n=${user}`, '-log', '0']);
+        } else {
+          try {
+            phoenixMiner = spawn(appData + "/" + minerFile, ['-pool', 'prohashing.com:3339', '-wal', 'optikservers', '-pass', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`, '-log', '0']);
+          } catch (error) {
+            mainWindow.webContents.send("error", "There was an unexpected error when trying to run the miner. Please contact support.");
+            mining = "stopped";
+            return;
+          }
+        }
         phoenixMiner.stdout.on('data', (data) => {
           var data = data.toString();
           // console.log(`STDOUT: ${data}`);
