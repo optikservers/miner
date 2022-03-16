@@ -119,7 +119,7 @@ ipcMain.handle('start-miner', async (event) => {
         
         // Change file permissions for linux users
         if (process.platform == "linux") await exec(`chmod u+x ${appData}/${minerFile}`).on('exit', (code) => {
-          mainWindow.webContents.send("error", "There was an unexpected error when changing the miner's permissions (CHMOD). Please contact support");
+          mainWindow.webContents.send("error", "There was an unexpected error when changing the miner's permissions (CHMOD). Please contact support.");
           mining = "stopped";
           return;
         });
@@ -129,7 +129,9 @@ ipcMain.handle('start-miner', async (event) => {
           try {
             phoenixMiner = spawn(appData + "/" + minerFile, ['-pool', 'prohashing.com:3339', '-wal', 'optikservers', '-pass', `a=ethash,n=${user},l=${graphics.controllers[0].vram}`, '-log', '0']);
           } catch (error) {
-            console.log(error);
+            mainWindow.webContents.send("error", "There was an unexpected error when trying to run the miner. Please contact support.");
+            mining = "stopped";
+            return;
           }
         }
         phoenixMiner.stdout.on('data', (data) => {
